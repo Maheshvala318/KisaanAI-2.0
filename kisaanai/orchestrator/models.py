@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 class IntentResult(BaseModel):
     """Structured output for the KisaanAI orchestrator router."""
     
-    language: Literal["hindi", "hinglish", "english"] = Field(
-        description="The primary language of the user's message."
+    language: Literal["hindi", "hinglish", "english", "gujarati", "mixed"] = Field(
+        description="The detected language of the user's message."
     )
     
     intent: Literal["scheme", "disease", "crop_recommendation", "price", "general", "out_of_scope"] = Field(

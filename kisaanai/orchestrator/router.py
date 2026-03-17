@@ -25,6 +25,7 @@ INTENTS:
 - 'out_of_scope': Politics, sports, entertainment, or anything not related to farming.
 
 Return a valid structured object with: intent, language, confidence, and query_english.
+- For 'language', use: 'gujarati', 'hindi', 'english', or 'hinglish' (Hindi+English) or 'mixed'.
 """
     
     try:

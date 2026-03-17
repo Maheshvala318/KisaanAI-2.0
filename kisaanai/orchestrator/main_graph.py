@@ -20,7 +20,8 @@ def node_final_response(state: BaseAgentState):
         return {"messages": []}
     
     # Otherwise, it's a general query (Namaste, etc.)
-    system_msg = SystemMessage(content="Tu KisaanAI hai. Bina tools ke general queries ka Hinglish mein jawab de.")
+    lang = state.language or "hinglish"
+    system_msg = SystemMessage(content=f"Tu KisaanAI hai. Bina tools ke general queries ka {lang} mein jawab de. If language is 'gujarati', reply in pure Gujarati. If 'hindi', use pure Hindi. If 'hinglish', use mixed.")
     response = llm_main.invoke([system_msg] + state.messages[-3:])
     
     # Track usage

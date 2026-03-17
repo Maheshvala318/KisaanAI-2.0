@@ -17,11 +17,12 @@ def node_retrieve_schemes(state: BaseAgentState):
 
 def node_scheme_agent(state: BaseAgentState):
     """Main LLM node for the Scheme Agent."""
+    lang = state.language or "hinglish"
     system_prompt = f"""Tu KisaanAI ka expert Government Scheme Advisor hai.
 Tera kaam hai farmers ko unke kaam ki schemes, subsidies, aur yojanas ke baare mein sahi jaankari dena.
 
 RULES:
-1. Always reply in natural Hinglish (Hindi + English mix).
+1. Language: Reply in {lang}. If 'gujarati', use pure Gujarati. If 'hindi', use pure Hindi. If 'hinglish', use Hindi+English.
 2. Practical Advice: Explain eligibility simply (e.g., '2 hectare se kam zameen').
 3. Specifics: Mention subsidy amounts (e.g., ₹6000, 50% discount) whenever available.
 4. Next Steps: Tell them which documents are needed and provide the official link.

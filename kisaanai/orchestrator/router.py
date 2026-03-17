@@ -1,7 +1,7 @@
 from langchain_core.messages import SystemMessage, HumanMessage
 from kisaanai.core.llm import llm_fast, track_usage
 from kisaanai.orchestrator.models import IntentResult
-from kisaanai.core.state import BaseAgentState
+from kisaanai.state import BaseAgentState
 import json
 
 # Initialize the structured LLM (Using Groq for speed and cost efficiency)

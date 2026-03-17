@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Literal
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
-from kisaanai.core.state import BaseAgentState
+from kisaanai.state import BaseAgentState
 from kisaanai.core.llm import llm_main, track_usage, get_llm_with_tools
 from kisaanai.tools.scheme_tools import SCHEME_TOOLS
 from datetime import datetime

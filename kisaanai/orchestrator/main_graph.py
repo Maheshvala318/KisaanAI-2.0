@@ -1,9 +1,9 @@
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import InMemorySaver
-from kisaanai.core.state import BaseAgentState
+from kisaanai.state import BaseAgentState
 from kisaanai.orchestrator.router import node_classify_intent, route_to_agent
 from kisaanai.agents.scheme_agent import scheme_agent
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage
 from kisaanai.core.llm import llm_main, track_usage
 
 # --- Nodes ---

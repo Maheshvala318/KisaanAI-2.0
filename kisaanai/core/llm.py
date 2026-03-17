@@ -2,7 +2,7 @@ from typing import Any
 from kisaanai.core.config import GROQ_API_KEY, GEMINI_API_KEY
 from langchain_groq import ChatGroq
 from langchain_google_genai import ChatGoogleGenerativeAI
-from kisaanai.core.state import UsageStats
+from kisaanai.state import UsageStats
 from datetime import datetime
 
 # 1. Fast LLM (Groq - Llama 3.1 8B)

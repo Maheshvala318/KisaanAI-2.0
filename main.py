@@ -1,22 +1,59 @@
-import asyncio
 import uuid
-from kisaanai.orchestrator.main_graph import kisaan_ai
-from kisaanai.core.llm import llm_main, llm_fast
+from kisaanai.orchestrator.main_graph import get_kisaan_ai, list_threads
+from kisaanai.core.llm import get_llm_main, get_llm_fast
 from langchain_core.messages import HumanMessage
 import sys
+import os
 
-async def run_cli():
+def select_thread():
+    """Menu to select an existing chat thread or start a new one."""
+    threads = list_threads()
+    
+    print("\n" + "="*50)
+    print("📜 CHAT HISTORY")
+    print("="*50)
+    print("0. [NEW] Start a fresh conversation")
+    
+    for i, tid in enumerate(threads, 1):
+        print(f"{i}. [RESUME] {tid}")
+    
+    print("="*50)
+    
+    try:
+        choice = input("\nSelect a chat (0-{}): ".format(len(threads))).strip()
+        if not choice or choice == "0":
+            new_id = str(uuid.uuid4())[:8]
+            print(f"✨ Starting new chat: {new_id}")
+            return new_id
+        
+        idx = int(choice) - 1
+        if 0 <= idx < len(threads):
+            tid = threads[idx]
+            print(f"🔄 Resuming chat: {tid}")
+            return tid
+        else:
+            new_id = str(uuid.uuid4())[:8]
+            print(f"⚠️ Invalid choice. Starting new chat: {new_id}")
+            return new_id
+    except (ValueError, IndexError, KeyboardInterrupt):
+        new_id = str(uuid.uuid4())[:8]
+        print(f"\n✨ Starting new chat: {new_id}")
+        return new_id
+
+def run_cli():
     """Interactive CLI to chat with the modular KisaanAI system."""
-    session_id = str(uuid.uuid4())[:8]
+    session_id = select_thread()
     config = {"configurable": {"thread_id": session_id}}
     
     print("\n" + "="*50)
-    print(f"🌾 KisaanAI 2.0 (Modular) - Session: {session_id}")
+    print(f"🌾 KisaanAI 2.0 (Modular) - Active Session: {session_id}")
     # ChatGroq uses model_name, ChatGoogleGenerativeAI uses model
-    fast_model = getattr(llm_fast, "model_name", "Unknown")
-    main_model = getattr(llm_main, "model", "Unknown")
+    fast_llm = get_llm_fast()
+    main_llm = get_llm_main()
+    fast_model = getattr(fast_llm, "model_name", getattr(fast_llm, "model", "Unknown"))
+    main_model = getattr(main_llm, "model", getattr(main_llm, "model_name", "Unknown"))
     print(f"🤖 Models: {fast_model} (Fast) | {main_model} (Main)")
-    print("Type 'exit' to quit, 'stats' to see LLM usage.")
+    print("Commands: 'exit' (quit), 'stats' (usage), '/history' (switch), '/new' (fresh start)")
     print("="*50 + "\n")
     
     while True:
@@ -33,8 +70,21 @@ async def run_cli():
             print("KisaanAI: Dhanyavaad! 👋")
             break
             
+        if user_input.lower() == "/new":
+            session_id = str(uuid.uuid4())[:8]
+            config = {"configurable": {"thread_id": session_id}}
+            print(f"\n✨ Switched to NEW session: {session_id}\n")
+            continue
+
+        if user_input.lower() == "/history":
+            session_id = select_thread()
+            config = {"configurable": {"thread_id": session_id}}
+            print(f"\n🔄 Switched to session: {session_id}\n")
+            continue
+
         if user_input.lower() == "stats":
-            state = kisaan_ai.get_state(config)
+            kisaan_app = get_kisaan_ai()
+            state = kisaan_app.get_state(config)
             usage = state.values.get("usage")
             if usage:
                 print(f"\n📊 [LLM Stats]")
@@ -51,22 +101,16 @@ async def run_cli():
         
         # Invoke the graph
         try:
-            result = await kisaan_ai.ainvoke(
+            kisaan_app = get_kisaan_ai()
+            result = kisaan_app.invoke(
                 {"messages": [HumanMessage(content=user_input)]},
                 config=config
             )
             
-            # The last message is the final response
             raw_response = result["messages"][-1].content
             
-            # Clean up response if it's a list (some newer SDKs return structured blocks)
             if isinstance(raw_response, list):
-                response_text = ""
-                for block in raw_response:
-                    if isinstance(block, dict) and 'text' in block:
-                        response_text += block['text']
-                    else:
-                        response_text += str(block)
+                response_text = "".join([str(b.get('text', b)) if isinstance(b, dict) else str(b) for b in raw_response])
             else:
                 response_text = str(raw_response)
                 
@@ -77,6 +121,6 @@ async def run_cli():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(run_cli())
+        run_cli()
     except KeyboardInterrupt:
         pass

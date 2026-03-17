@@ -49,3 +49,8 @@ brain/
 scripts/check_apis.py
 scripts/sweep_models.py
 scripts/test_modular_agent.py
+
+# Local Databases
+*.db
+*.db-shm
+*.db-wal

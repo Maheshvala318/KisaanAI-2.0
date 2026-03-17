@@ -1,30 +1,21 @@
-from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import InMemorySaver
-from kisaanai.state import BaseAgentState
-from kisaanai.orchestrator.router import node_classify_intent, route_to_agent
-from kisaanai.agents.scheme_agent import scheme_agent
-from langchain_core.messages import AIMessage, SystemMessage
-from kisaanai.core.llm import llm_main, track_usage
+import sqlite3
 
 # --- Nodes ---
 
-def node_final_response(state: BaseAgentState):
+def node_final_response(state):
     """
     Handling for general queries or formatting the final output.
-    If an agent has already responded, we just pass it through.
-    If it's a general query, we let Gemini answer.
     """
-    # If the last message is already an AI message from a specialist agent,
-    # we don't need to generate a new one, but we could add a disclaimer here.
+    from langchain_core.messages import AIMessage, SystemMessage
+    from kisaanai.core.llm import get_llm_main, track_usage
+
     if isinstance(state.messages[-1], AIMessage) and not state.messages[-1].tool_calls:
         return {"messages": []}
     
-    # Otherwise, it's a general query (Namaste, etc.)
     lang = state.language or "hinglish"
     system_msg = SystemMessage(content=f"Tu KisaanAI hai. Bina tools ke general queries ka {lang} mein jawab de. If language is 'gujarati', reply in pure Gujarati. If 'hindi', use pure Hindi. If 'hinglish', use mixed.")
-    response = llm_main.invoke([system_msg] + state.messages[-3:])
+    response = get_llm_main().invoke([system_msg] + state.messages[-3:])
     
-    # Track usage
     usage_update = track_usage("gemini", response)
     
     return {
@@ -34,16 +25,37 @@ def node_final_response(state: BaseAgentState):
 
 # --- Main Graph ---
 
-def build_kisaan_graph():
+# Global instances to keep connection alive
+_checkpointer = None
+_kisaan_ai = None
+
+def get_kisaan_ai():
+    global _kisaan_ai, _checkpointer
+    if _kisaan_ai is None:
+        from langgraph.checkpoint.sqlite import SqliteSaver
+        
+        db_path = "kisaanai_memory.db"
+        # Manual connection for synchronous SqliteSaver
+        conn = sqlite3.connect(db_path, check_same_thread=False)
+        _checkpointer = SqliteSaver(conn)
+        _checkpointer.setup()
+        
+        _kisaan_ai = build_kisaan_graph(_checkpointer)
+    return _kisaan_ai
+
+def build_kisaan_graph(checkpointer):
     """Compiles the master KisaanAI graph."""
-    # We use BaseAgentState which includes our usage tracking
+    from langgraph.graph import StateGraph, START, END
+    from kisaanai.state import BaseAgentState
+    from kisaanai.orchestrator.router import node_classify_intent, route_to_agent
+    from kisaanai.agents.scheme_agent import get_scheme_agent
+
     builder = StateGraph(BaseAgentState)
     
     # Add Nodes
     builder.add_node("router", node_classify_intent)
-    builder.add_node("scheme_agent", scheme_agent)
+    builder.add_node("scheme_agent", get_scheme_agent())
     builder.add_node("final_response", node_final_response)
-    # Add other agents (disease, etc.) here in future
     
     # Define Edges
     builder.add_edge(START, "router")
@@ -53,7 +65,7 @@ def build_kisaan_graph():
         route_to_agent,
         {
             "scheme_agent": "scheme_agent",
-            "disease_agent": "final_response", # Placeholder
+            "disease_agent": "final_response", 
             "final_response": "final_response"
         }
     )
@@ -61,10 +73,23 @@ def build_kisaan_graph():
     builder.add_edge("scheme_agent", "final_response")
     builder.add_edge("final_response", END)
     
-    # Persistence (InMemory for dev)
-    checkpointer = InMemorySaver()
-    
     return builder.compile(checkpointer=checkpointer)
 
-# Master Instance
-kisaan_ai = build_kisaan_graph()
+def list_threads():
+    """Returns a list of unique thread IDs stored in the SQLite memory."""
+    db_path = "kisaanai_memory.db"
+    try:
+        import sqlite3
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='checkpoints'")
+        if not cursor.fetchone():
+            conn.close()
+            return []
+            
+        cursor.execute("SELECT DISTINCT thread_id FROM checkpoints")
+        threads = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        return threads
+    except Exception:
+        return []

@@ -1,11 +1,16 @@
-from langchain_core.messages import SystemMessage, HumanMessage
-from kisaanai.core.llm import llm_fast, track_usage
+from kisaanai.core.llm import get_llm_fast, track_usage
 from kisaanai.orchestrator.models import IntentResult
 from kisaanai.state import BaseAgentState
 import json
 
-# Initialize the structured LLM (Using Groq for speed and cost efficiency)
-router_llm = llm_fast.with_structured_output(IntentResult)
+# Lazy loaded structured LLM
+_router_llm = None
+
+def get_router_llm():
+    global _router_llm
+    if _router_llm is None:
+        _router_llm = get_llm_fast().with_structured_output(IntentResult)
+    return _router_llm
 
 def node_classify_intent(state: BaseAgentState):
     """
@@ -29,8 +34,9 @@ Return a valid structured object with: intent, language, confidence, and query_e
 """
     
     try:
+        from langchain_core.messages import SystemMessage, HumanMessage
         # We give only the last message for speed, unless state.messages is long
-        result = router_llm.invoke([
+        result = get_router_llm().invoke([
             SystemMessage(content=system_prompt),
             HumanMessage(content=last_msg)
         ])

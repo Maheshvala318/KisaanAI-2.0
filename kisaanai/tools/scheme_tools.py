@@ -1,20 +1,23 @@
-from kisaanai.utils.vector_store import VectorStore
-from kisaanai.core.config import FAISS_INDEX_DIR
 from langchain_core.tools import tool
-import pandas as pd
 
-# Load the vector store once (global instance for the agent)
-scheme_store = VectorStore(index_name="scheme", index_dir=FAISS_INDEX_DIR)
+# Lazy loaded instance
+_scheme_store = None
+
+def get_scheme_store():
+    global _scheme_store
+    if _scheme_store is None:
+        from kisaanai.utils.vector_store import VectorStore
+        from kisaanai.core.config import FAISS_INDEX_DIR
+        _scheme_store = VectorStore(index_name="scheme", index_dir=FAISS_INDEX_DIR)
+    return _scheme_store
 
 @tool
 def search_schemes(query: str) -> str:
     """
     Search for government agricultural schemes, subsidies, and yojanas.
-    Use this when the farmer asks about financial help, support, or specific scheme names.
-    Input should be a clear search query in English or Hinglish.
     """
     try:
-        results, scores = scheme_store.search(query, k=4)
+        results, scores = get_scheme_store().search(query, k=4)
         if not results:
             return "Koi matching scheme nahi mili. Kripya thoda detail mein bataiye."
         
@@ -36,14 +39,14 @@ def search_schemes(query: str) -> str:
 @tool
 def get_scheme_by_state(state_name: str) -> str:
     """
-    Lists major agricultural schemes for a specific Indian state (e.g., Gujarat, Punjab).
-    Use this when the farmer asks 'Mere state mein kaunsi schemes hain?'.
+    Lists major agricultural schemes for a specific Indian state.
     """
     try:
-        scheme_store.load()
-        df = pd.DataFrame(scheme_store.metadata)
+        store = get_scheme_store()
+        store.load()
+        import pandas as pd
+        df = pd.DataFrame(store.metadata)
         
-        # Simple string match for state
         mask = df['state'].str.lower().str.contains(state_name.lower(), na=False)
         filtered = df[mask].head(10)
         
@@ -58,5 +61,6 @@ def get_scheme_by_state(state_name: str) -> str:
     except Exception as e:
         return f"Filter error: {str(e)}"
 
-# Export tools list for the graph
-SCHEME_TOOLS = [search_schemes, get_scheme_by_state]
+# Function to get tools list lazily
+def get_scheme_tools():
+    return [search_schemes, get_scheme_by_state]

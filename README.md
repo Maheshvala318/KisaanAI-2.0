@@ -18,7 +18,39 @@ KisaanAI 2.0 is a state-of-the-art, modular AI assistant designed to help Indian
 
 ## 🏗️ Architecture Overview
 
-KisaanAI 2.0 uses a "Router-Worker" pattern:
+KisaanAI 2.0 uses a "Router-Worker" pattern for Maximum modularity. Below is the **Auto-generated LangGraph Visualization** showing the internal logic and subgraphs:
+
+```mermaid
+graph TD;
+    __start__([start]):::first
+    router(router)
+    final_response(final_response)
+    __end__([end]):::last
+
+    __start__ --> router;
+    router -. disease_agent .-> final_response;
+    router -.-> scheme_agent_start;
+    scheme_agent_end --> final_response;
+    final_response --> __end__;
+
+    subgraph scheme_agent [Scheme Expert Subgraph]
+        scheme_agent_start(start)
+        scheme_agent_logic(agent)
+        scheme_agent_tools(tools)
+        scheme_agent_end(end)
+
+        scheme_agent_start --> scheme_agent_logic;
+        scheme_agent_logic -.-> scheme_agent_end;
+        scheme_agent_logic -.-> scheme_agent_tools;
+        scheme_agent_tools --> scheme_agent_logic;
+    end
+
+    classDef default fill:#f2f0ff,line-height:1.2
+    classDef first fill-opacity:0
+    classDef last fill:#bfb6fc
+```
+
+### Core Components
 1. **Router**: Analyzes the farmer's query using Groq.
 2. **Workers**: specialized agents like the **Scheme Agent** handle specific domains using RAG (Retrieval-Augmented Generation) with a FAISS vector store.
 3. **Response Node**: Synthesizes the final answer in natural, friendly Hinglish.
@@ -76,8 +108,8 @@ As development continues, we are tracking these production requirements:
 - [x] **Performance Optimization** (Lazy model loading)
 - [x] **Usage Tracking** (Token and request monitoring)
 - [x] **Error Handling** (Retry logic for Gemini API)
-- [ ] **Scalable Data Sync** (Automatic updates for scheme CSVs)
-- [ ] **Multi-user Support** (Persistent database for thread history)
+- [x] **Scalable Data Sync** (Automatic updates for scheme CSVs)
+- [x] **Multi-user Support** (Persistent database for thread history)
 - [ ] **Deployment** (Containerization with Docker)
 - [ ] **Security** (API Gateway for rate limiting)
 

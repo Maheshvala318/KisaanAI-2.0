@@ -1,0 +1,28 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	router(router)
+	final_response(final_response)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> router;
+	router -. &nbsp;disease_agent&nbsp; .-> final_response;
+	router -.-> scheme_agent\3a__start__;
+	scheme_agent\3a__end__ --> final_response;
+	final_response --> __end__;
+	subgraph scheme_agent
+	scheme_agent\3a__start__(<p>__start__</p>)
+	scheme_agent\3aagent(agent)
+	scheme_agent\3atools(tools)
+	scheme_agent\3a__end__(<p>__end__</p>)
+	scheme_agent\3a__start__ --> scheme_agent\3aagent;
+	scheme_agent\3aagent -.-> scheme_agent\3a__end__;
+	scheme_agent\3aagent -.-> scheme_agent\3atools;
+	scheme_agent\3atools --> scheme_agent\3aagent;
+	end
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

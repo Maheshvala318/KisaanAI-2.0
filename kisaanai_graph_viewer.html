@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KisaanAI 2.0 - Internal Graph Viewer</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+        .mermaid { display: flex; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>KisaanAI 2.0 - Internal System Graph</h1>
+        <p>This graph was generated directly from the LangGraph compiled application using <code>xray=True</code>.</p>
+        <hr>
+        <div class="mermaid">
+graph TD;
+        __start__([start]):::first
+        router(router)
+        final_response(final_response)
+        __end__([end]):::last
+        __start__ --> router;
+        router -. &nbsp;disease_agent&nbsp; .-> final_response;
+        router -.-> scheme_agent_start;
+        scheme_agent_end --> final_response;
+        final_response --> __end__;
+        subgraph scheme_agent [Scheme Expert Subgraph]
+        scheme_agent_start(start)
+        scheme_agent_logic(agent)
+        scheme_agent_tools(tools)
+        scheme_agent_end(end)
+        scheme_agent_start --> scheme_agent_logic;
+        scheme_agent_logic -.-> scheme_agent_end;
+        scheme_agent_logic -.-> scheme_agent_tools;
+        scheme_agent_tools --> scheme_agent_logic;
+        end
+        classDef default fill:#f2f0ff,line-height:1.2
+        classDef first fill-opacity:0
+        classDef last fill:#bfb6fc
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'forest' });
+    </script>
+</body>
+</html>

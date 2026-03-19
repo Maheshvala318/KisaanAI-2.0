@@ -33,6 +33,10 @@ ENV/
 models/faiss_indexes/
 dataset/*.csv
 !dataset/agri_schemes_sample.csv
+dataset/niphm_pdfs/
+dataset/niphm_images/
+dataset/chunks/
+qdrant_storage/
 *.index
 *_meta.json
 
